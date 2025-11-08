@@ -1,0 +1,56 @@
+# Nome do workflow - aparece no GitHub Actions
+name: Deploy to Azure App Service
+
+# Define quando o workflow vai rodar
+on:
+  push:
+    branches:
+      - main   # Roda quando faz push na branch main
+      - master # Ou na branch master
+  workflow_dispatch:  # Também pode rodar manualmente pelo botão no GitHub
+
+# Variáveis de ambiente - valores que podem ser reutilizados
+env:
+  AZURE_WEBAPP_NAME: servidor-pi  # ⚠️ IMPORTANTE: Altere para o nome do seu App Service no Azure
+  DOTNET_VERSION: '8.0.x'  # Versão do .NET que vamos usar
+
+# Jobs - tarefas que o workflow vai executar
+jobs:
+  build-and-deploy:  # Nome do job
+    runs-on: ubuntu-latest  # Roda em uma máquina Linux (Ubuntu)
+    
+    steps:  # Passos que vamos executar em ordem
+    # Passo 1: Baixa o código do repositório
+    - name: Checkout code
+      uses: actions/checkout@v4  # Ação do GitHub que baixa o código
+
+    # Passo 2: Instala o .NET na máquina
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}  # Usa a versão que definimos acima
+
+    # Passo 3: Restaura os pacotes NuGet (dependências do projeto)
+    # É como fazer "dotnet restore" - baixa todas as bibliotecas necessárias
+    - name: Restore dependencies
+      run: dotnet restore
+
+    # Passo 4: Compila o projeto em modo Release (otimizado para produção)
+    # --no-restore = não restaura de novo, já fizemos isso antes
+    - name: Build
+      run: dotnet build --configuration Release --no-restore
+
+    # Passo 5: Publica o projeto - gera os arquivos prontos para deploy
+    # --no-build = não compila de novo, já fizemos isso
+    # --output ./publish = coloca os arquivos na pasta "publish"
+    - name: Publish
+      run: dotnet publish --configuration Release --no-build --output ./publish
+
+    # Passo 6: Faz o deploy no Azure
+    # Usa a ação oficial do Azure para fazer upload
+    - name: Deploy to Azure Web App
+      uses: azure/webapps-deploy@v3
+      with:
+        app-name: ${{ env.AZURE_WEBAPP_NAME }}  # Nome do App Service no Azure
+        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}  # Credenciais (secret do GitHub)
+        package: ./publish  # Pasta com os arquivos para deploy
