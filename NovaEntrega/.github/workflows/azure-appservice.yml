@@ -16,41 +16,37 @@ env:
 
 # Jobs - tarefas que o workflow vai executar
 jobs:
-  build-and-deploy:  # Nome do job
-    runs-on: ubuntu-latest  # Roda em uma máquina Linux (Ubuntu)
-    
-    steps:  # Passos que vamos executar em ordem
-    # Passo 1: Baixa o código do repositório
-    - name: Checkout code
-      uses: actions/checkout@v4  # Ação do GitHub que baixa o código
+  build:
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4  # Ação do GitHub que baixa o código
 
-    # Passo 2: Instala o .NET na máquina
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: ${{ env.DOTNET_VERSION }}  # Usa a versão que definimos acima
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}  # Usa a versão que definimos acima
 
-    # Passo 3: Restaura os pacotes NuGet (dependências do projeto)
-    # É como fazer "dotnet restore" - baixa todas as bibliotecas necessárias
-    - name: Restore dependencies
-      run: dotnet restore
+      - name: Restore dependencies
+        run: dotnet restore
 
-    # Passo 4: Compila o projeto em modo Release (otimizado para produção)
-    # --no-restore = não restaura de novo, já fizemos isso antes
-    - name: Build
-      run: dotnet build --configuration Release --no-restore
+      - name: Build with dotnet
+        working-directory: NovaEntrega
+        run: dotnet build Servidor_PI.sln --configuration Release
 
-    # Passo 5: Publica o projeto - gera os arquivos prontos para deploy
-    # --no-build = não compila de novo, já fizemos isso
-    # --output ./publish = coloca os arquivos na pasta "publish"
-    - name: Publish
-      run: dotnet publish --configuration Release --no-build --output ./publish
+      - name: dotnet publish
+        working-directory: NovaEntrega
+        run: dotnet publish Servidor_PI.csproj --configuration Release --output ./publish
 
-    # Passo 6: Faz o deploy no Azure
-    # Usa a ação oficial do Azure para fazer upload
-    - name: Deploy to Azure Web App
-      uses: azure/webapps-deploy@v3
-      with:
-        app-name: ${{ env.AZURE_WEBAPP_NAME }}  # Nome do App Service no Azure
-        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}  # Credenciais (secret do GitHub)
-        package: ./publish  # Pasta com os arquivos para deploy
+      - name: Upload artifact for deployment job
+        working-directory: NovaEntrega
+        uses: actions/upload-artifact@v4
+        with:
+          name: dotnet-app
+          path: publish
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}  # Nome do App Service no Azure
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}  # Credenciais (secret do GitHub)
+          package: ./publish  # Pasta com os arquivos para deploy
