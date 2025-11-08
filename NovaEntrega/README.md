@@ -11,30 +11,48 @@ Foco em rodar local fácil, testar via Swagger e opcionalmente publicar no Azure
 
 ## 🚀 Como rodar local
 
-1. Clone o repositório:
+1. Entre no diretório do projeto:
 ```bash
-git clone <seu-repositorio>
 cd NovaEntrega
 ```
 
-2. Restaure os pacotes NuGet:
+2. Restaure e compile (opcional):
 ```bash
-dotnet restore
+dotnet restore Servidor_PI.sln
+dotnet build Servidor_PI.sln --configuration Release
 ```
 
 3. Execute a aplicação (o banco será criado/migrado automaticamente):
 ```bash
-dotnet run
+dotnet run --project Servidor_PI.csproj --launch-profile http
 ```
 
-Observação: na primeira execução, a aplicação garante a criação do banco.
-Ela pode aplicar migrations disponíveis e/ou um script inicial (quando configurado).
-Você não precisa rodar migrations manualmente para começar.
+Observação:
+- Na primeira execução, o banco SQLite é criado/migrado automaticamente.
+- Se você usar `dotnet run` sem perfil, a porta pode variar (ex.: 5279).
 
-4. Acesse os serviços:
+4. Acesse os serviços (perfil `http`):
 - **Swagger UI**: http://localhost:5000/swagger
 - **Health Check**: http://localhost:5000/api/health
 - **API Base**: http://localhost:5000/api
+
+### 🔗 URLs e portas
+- Perfil `http` (recomendado): `http://localhost:5000`
+- Execução sem perfil (padrão do SDK): pode abrir em outra porta, ex.: `http://localhost:5279`
+- Para forçar a porta: `set ASPNETCORE_URLS=http://localhost:5000` antes de `dotnet run`
+
+### ▶️ Executar como publicado
+```powershell
+# Publicar artefatos
+dotnet publish Servidor_PI.csproj -c Release -o publish
+
+# Rodar executável publicado em modo Desenvolvimento (SQLite local)
+$env:ASPNETCORE_ENVIRONMENT = "Development"
+./publish/Servidor_PI.exe
+```
+URLs (publicado):
+- HTTP: `http://localhost:5000` (se configurado via `ASPNETCORE_URLS`)
+- Swagger: `http://localhost:5000/swagger`
 
 ## ✅ O que já funciona
 
@@ -184,6 +202,14 @@ dotnet run
 - **Banco de Dados**: Será criado automaticamente na primeira execução no Azure
 - **Primeiro Deploy**: Pode levar 5-10 minutos, seja paciente! 😊
 
+### 🚦 CI/CD via GitHub Actions (repositório)
+- Workflow principal: `.github/workflows/main_projeto-pi-nads2-grupo4.yml`
+- Esse workflow já compila e publica a partir de `NovaEntrega/` usando `Servidor_PI.sln/Servidor_PI.csproj`.
+- Pastas `.github/workflows` fora da raiz (ex.: `NovaEntrega/.github/workflows`) não são lidas pelo GitHub Actions.
+- Para disparar:
+  - Faça um push na branch `main`, ou
+  - Execute manualmente em **Actions** > workflow > **Run workflow**.
+
 ### 💰 Plano Gratuito (Free F1)
 
 **Vantagens:**
@@ -312,6 +338,13 @@ curl -X POST http://localhost:5000/api/usuarios \
 - A aplicação cria o banco automaticamente na primeira execução
 - Se necessário, delete o arquivo `Data/app.db` e execute novamente
 - O `schema.sql` será executado automaticamente se o banco não existir
+
+### Erro MSB1003 no build ("Specify a project or solution file")
+- Execute os comandos dentro de `NovaEntrega/` e informe `Servidor_PI.sln` (build) ou `Servidor_PI.csproj` (run/publish).
+- No CI, garanta `working-directory: NovaEntrega` nos passos de `restore`, `build` e `publish`.
+
+### Porta diferente de 5000 ao rodar local
+- Use `--launch-profile http` ou defina `ASPNETCORE_URLS=http://localhost:5000` para padronizar.
 
 ## 📞 Suporte
 

@@ -20,6 +20,9 @@ jobs:
         with:
           dotnet-version: '8.x'
 
+      - name: Restore dependencies
+        working-directory: NovaEntrega
+        run: dotnet restore Servidor_PI.sln
       - name: Navigate to project folder
         run: cd NovaEntrega
 
@@ -29,7 +32,7 @@ jobs:
 
       - name: dotnet publish
         working-directory: NovaEntrega
-        run: dotnet publish Servidor_PI.sln -c Release -o "${{env.DOTNET_ROOT}}/myapp"
+        run: dotnet publish Servidor_PI.csproj -c Release -o "${{env.DOTNET_ROOT}}/myapp"
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4

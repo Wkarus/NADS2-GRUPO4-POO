@@ -78,10 +78,99 @@ try
 {
     using (var scope = app.Services.CreateScope())
     {
+        // Garante que a pasta Data exista para o SQLite (evita erro 14 em publish/Azure)
+        var dataDir = Path.Combine(app.Environment.ContentRootPath, "Data");
+        if (!Directory.Exists(dataDir))
+        {
+            Directory.CreateDirectory(dataDir);
+        }
+
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-        await db.Database.MigrateAsync();             // aplica migrations pendentes
+        await db.Database.MigrateAsync();                               // aplica migrations pendentes
         await db.Database.ExecuteSqlRawAsync("PRAGMA foreign_keys = ON;"); // habilita FKs (SQLite)
+
+        // Seed de dados de exemplo (somente se vazio)
+        if (!await db.Usuarios.AnyAsync())
+        {
+            var u1 = new Usuario
+            {
+                nome_completo = "João Silva Santos",
+                nome_usuario = "joao123",
+                email = "joao@example.com",
+                senha = "123456",
+                telefone = "11999990000",
+                cpf = "12345678901",
+                cep = "01000-000"
+            };
+
+            var u2 = new Usuario
+            {
+                nome_completo = "Maria Oliveira",
+                nome_usuario = "maria456",
+                email = "maria@example.com",
+                senha = "123456",
+                telefone = "11988880000",
+                cpf = "98765432100",
+                cep = "02000-000"
+            };
+
+            await db.Usuarios.AddRangeAsync(u1, u2);
+            await db.SaveChangesAsync();
+        }
+
+        if (!await db.Campanhas.AnyAsync())
+        {
+            var c1 = new Campanha
+            {
+                nome_campanha = "Campanha do Agasalho 2024",
+                meta_arrecadacao = 10000m,
+                inicio = DateTime.UtcNow.AddDays(-30),
+                fim = DateTime.UtcNow.AddDays(60)
+            };
+
+            var c2 = new Campanha
+            {
+                nome_campanha = "Natal Solidário",
+                meta_arrecadacao = 20000m,
+                inicio = DateTime.UtcNow.AddDays(-10),
+                fim = DateTime.UtcNow.AddDays(90)
+            };
+
+            await db.Campanhas.AddRangeAsync(c1, c2);
+            await db.SaveChangesAsync();
+        }
+
+        if (!await db.Doacoes.AnyAsync())
+        {
+            var usuarioIds = await db.Usuarios.Select(u => u.cd_cliente).ToListAsync();
+            var campanhaIds = await db.Campanhas.Select(c => c.cd_campanha).ToListAsync();
+            if (usuarioIds.Count >= 2 && campanhaIds.Count >= 2)
+            {
+                var d1 = new Doacao
+                {
+                    cd_cliente = usuarioIds[0],
+                    cd_campanha = campanhaIds[0],
+                    nome_doacao = "Doação de roupas", 
+                    tipo_doacao = TipoDoacao.Roupas,
+                    forma_arrecadacao = FormaArrecadacao.Entrega,
+                    status_arrecadacao = StatusArrecadacao.Pendente
+                };
+
+                var d2 = new Doacao
+                {
+                    cd_cliente = usuarioIds[1],
+                    cd_campanha = campanhaIds[1],
+                    nome_doacao = "Doação em dinheiro", 
+                    tipo_doacao = TipoDoacao.Dinheiro,
+                    forma_arrecadacao = FormaArrecadacao.PIX,
+                    status_arrecadacao = StatusArrecadacao.Confirmada
+                };
+
+                await db.Doacoes.AddRangeAsync(d1, d2);
+                await db.SaveChangesAsync();
+            }
+        }
     }
 
     Log.Information("Banco migrado e aplicação iniciada com sucesso!");
