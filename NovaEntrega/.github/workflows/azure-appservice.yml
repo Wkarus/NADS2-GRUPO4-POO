@@ -1,54 +1,67 @@
-# Nome do workflow - aparece no GitHub Actions
-name: Deploy to Azure App Service
+name: Build and deploy ASP.Net Core app to Azure Web App - Projeto-PI-NADS2-GRUPO4
 
-# Define quando o workflow vai rodar
 on:
   push:
     branches:
-      - main   # Roda quando faz push na branch main
-      - master # Ou na branch master
-  workflow_dispatch:  # Também pode rodar manualmente pelo botão no GitHub
+      - main
+  workflow_dispatch:
 
-# Variáveis de ambiente - valores que podem ser reutilizados
-env:
-  AZURE_WEBAPP_NAME: servidor-pi  # ⚠️ IMPORTANTE: Altere para o nome do seu App Service no Azure
-  DOTNET_VERSION: '8.0.x'  # Versão do .NET que vamos usar
-
-# Jobs - tarefas que o workflow vai executar
 jobs:
   build:
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4  # Ação do GitHub que baixa o código
+    runs-on: windows-latest
+    permissions:
+      contents: read
 
-      - name: Setup .NET
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}  # Usa a versão que definimos acima
+          dotnet-version: '8.x'
 
       - name: Restore dependencies
         working-directory: NovaEntrega
-        run: dotnet restore
+        run: dotnet restore Servidor_PI.sln
 
-      - name: Build with dotnet
+      - name: Build
         working-directory: NovaEntrega
-        run: dotnet build Servidor_PI.sln --configuration Release
+        run: dotnet build Servidor_PI.sln --configuration Release --no-restore
 
-      - name: dotnet publish
+      - name: Publish
         working-directory: NovaEntrega
-        run: dotnet publish Servidor_PI.csproj --configuration Release --output ./publish
+        run: dotnet publish Servidor_PI.csproj -c Release -o "${{env.DOTNET_ROOT}}/myapp" --no-build
 
       - name: Upload artifact for deployment job
-        working-directory: NovaEntrega
         uses: actions/upload-artifact@v4
         with:
-          name: dotnet-app
-          path: publish
+          name: .net-app
+          path: ${{env.DOTNET_ROOT}}/myapp
+
+  deploy:
+    runs-on: windows-latest
+    needs: build
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Download artifact from build job
+        uses: actions/download-artifact@v4
+        with:
+          name: .net-app
+
+      - name: Login to Azure (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_5E215D461742408D96F3A3FB5D3FE04F }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_6571F946DFD04808964C90C63F3F57E3 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_F27B6471B93E40B8B693D6EDF56D96E3 }}
 
       - name: Deploy to Azure Web App
-        working-directory: NovaEntrega
         uses: azure/webapps-deploy@v3
         with:
-          app-name: ${{ env.AZURE_WEBAPP_NAME }}
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          package: ./publish
+          app-name: 'Projeto-PI-NADS2-GRUPO4'
+          slot-name: 'Production'
+          package: .
