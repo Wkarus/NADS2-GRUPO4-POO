@@ -8,18 +8,18 @@ namespace Servidor_PI.Repositories
 {
     public class RelatorioRepository : IRelatorioRepository
     {
-        // Repository de relatorios: CRUD basico e relacionamento com campanha
+        // Repository de relatórios: CRUD básico e relacionamento com campanha
         private readonly AppDbContext _context;
         private readonly ILogger<RelatorioRepository> _logger;
 
-        // Injecao de dependencia: contexto do banco e logger
+        // Injeção de dependência: contexto do banco e logger
         public RelatorioRepository(AppDbContext context, ILogger<RelatorioRepository> logger)
         {
             _context = context;
             _logger = logger;
         }
 
-        // Lista todos os relatorios com campanha relacionada
+        // Lista todos os relatórios com campanha relacionada
         public async Task<IEnumerable<Relatorio>> GetAllAsync()
         {
             try
@@ -35,7 +35,7 @@ namespace Servidor_PI.Repositories
             }
         }
 
-        // Busca relatorio por ID com campanha relacionada
+        // Busca relatório por ID com campanha relacionada
         public async Task<Relatorio?> GetByIdAsync(int id)
         {
             try
@@ -51,20 +51,24 @@ namespace Servidor_PI.Repositories
             }
         }
 
-        // Cria novo relatorio
+        //  Cria novo relatório 
         public async Task<Relatorio> CreateAsync(Relatorio relatorio)
         {
             try
             {
-                // Validar se campanha existe
+                //  Verifica se a campanha existe
                 var campanha = await _context.Campanhas.FindAsync(relatorio.cd_campanha);
                 if (campanha == null)
                 {
                     throw new InvalidOperationException($"Campanha {relatorio.cd_campanha} não encontrada");
                 }
 
+                //  Garante que o EF use a instância já existente da campanha
+                relatorio.Campanha = campanha;
+
                 _context.Relatorios.Add(relatorio);
                 await _context.SaveChangesAsync();
+
                 return relatorio;
             }
             catch (DbUpdateException ex) when (ex.InnerException is SqliteException sqlEx)
@@ -79,7 +83,7 @@ namespace Servidor_PI.Repositories
             }
         }
 
-        // Atualiza relatorio existente
+        // Atualiza relatório existente
         public async Task<Relatorio?> UpdateAsync(int id, Relatorio relatorio)
         {
             try
@@ -98,6 +102,8 @@ namespace Servidor_PI.Repositories
                     {
                         throw new InvalidOperationException($"Campanha {relatorio.cd_campanha} não encontrada");
                     }
+
+                    existingRelatorio.Campanha = campanha;
                 }
 
                 existingRelatorio.cd_campanha = relatorio.cd_campanha;
@@ -120,7 +126,7 @@ namespace Servidor_PI.Repositories
             }
         }
 
-        // Remove relatorio por ID
+        // Remove relatório por ID
         public async Task<bool> DeleteAsync(int id)
         {
             try
