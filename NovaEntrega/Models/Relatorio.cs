@@ -1,30 +1,30 @@
 using System.ComponentModel.DataAnnotations;
-using Servidor_PI.Enums;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Servidor_PI.Models
 {
     public class Relatorio
     {
-        // ID do relatorio (chave primaria)
         [Key]
         public int cd_relatorio { get; set; }
 
-        // ID da campanha relacionada
+        // 🔹 Este campo garante que toda notícia tenha uma campanha
         [Required]
+        [ForeignKey("Campanha")]
         public int cd_campanha { get; set; }
 
-        // Tipo de relatorio (enum)
         [Required]
-        public TipoRelatorio tipo_relatorio { get; set; }
+        [MaxLength(100)]
+        public string tipo_relatorio { get; set; } = string.Empty;
 
-        // Valor gasto (opcional)
-        public decimal? valor_gasto { get; set; }
+        [Required]
+        public decimal valor_gasto { get; set; }
 
-        // Data do relatorio
         [Required]
         public DateTime data_relatorio { get; set; }
 
-        // Relacionamento: relatorio pertence a uma campanha
+        // 🔸 NÃO colocar [Required] aqui
+        // O EF entende o relacionamento automaticamente pelo cd_campanha
         public Campanha Campanha { get; set; } = null!;
     }
 }
