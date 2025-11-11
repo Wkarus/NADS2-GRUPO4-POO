@@ -23,8 +23,8 @@ namespace Servidor_PI.Models
         [Required]
         public DateTime data_relatorio { get; set; }
 
-        // 🔸 NÃO colocar [Required] aqui
+        //  
         // O EF entende o relacionamento automaticamente pelo cd_campanha
-        public Campanha Campanha { get; set; } = null!;
+        public Campanha? Campanha { get; set; };
     }
 }
