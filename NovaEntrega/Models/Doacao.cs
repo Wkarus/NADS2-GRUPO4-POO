@@ -1,37 +1,26 @@
-using System.ComponentModel.DataAnnotations;
-using Servidor_PI.Enums;
-
-namespace Servidor_PI.Models
+public class Doacao
 {
-    // Entidade doacao: guarda quem doou, para qual campanha e o tipo
-    public class Doacao
-    {
-        // ID da doacao (chave primaria)
-        [Key]
-        public int cd_doacao { get; set; }              // ID da doacao
+    [Key]
+    public int cd_doacao { get; set; }
 
-        // IDs de relacionamento
-        [Required]
-        public int cd_cliente { get; set; }              // ID do usuario (quem doa)
+    [Required]
+    public int cd_cliente { get; set; }
 
-        [Required]
-        public int cd_campanha { get; set; }             // ID da campanha
+    [Required] 
+    public int cd_campanha { get; set; }
 
-        // Informacoes principais da doacao
-        [Required]
-        [MaxLength(200)]
-        public string nome_doacao { get; set; } = string.Empty; // Nome/descricao da doacao
+    [Required]
+    [MaxLength(200)]
+    public string nome_doacao { get; set; } = string.Empty;
 
-        // Tipo/forma/status da arrecadacao
-        [Required]
-        public TipoDoacao tipo_doacao { get; set; }      // Tipo (ex.: Dinheiro, Alimento)
+    [Required]
+    public TipoDoacao tipo_doacao { get; set; }
 
-        public FormaArrecadacao? forma_arrecadacao { get; set; } // Forma de arrecadacao
+    public FormaArrecadacao? forma_arrecadacao { get; set; }
 
-        public StatusArrecadacao status_arrecadacao { get; set; } = StatusArrecadacao.Pendente; // Status
+    public StatusArrecadacao status_arrecadacao { get; set; } = StatusArrecadacao.Pendente;
 
-        // Relacionamentos (ligacao com outras tabelas)
-        public Usuario Usuario { get; set; } = null!;    // Usuario dono da doacao
-        public Campanha Campanha { get; set; } = null!;  // Campanha relacionada
-    }
+    // TORNE OPCIONAIS TEMPORARIAMENTE
+    public Usuario? Usuario { get; set; }
+    public Campanha? Campanha { get; set; }
 }
