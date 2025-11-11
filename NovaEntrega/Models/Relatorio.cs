@@ -25,6 +25,7 @@ namespace Servidor_PI.Models
 
         //  
         // O EF entende o relacionamento automaticamente pelo cd_campanha
-        public Campanha? Campanha { get; set; };
+        [ValidateNever]
+        public Campanha? Campanha { get; set;};
     }
 }
